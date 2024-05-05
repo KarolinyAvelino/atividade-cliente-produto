@@ -1,0 +1,94 @@
+import sqlite3
+from typing import List, Optional
+from models.cliente import Cliente
+from sql.cliente import *
+from util.conexao import criar_conexao
+
+
+class ClienteRepo:
+    @classmethod
+    def criar_tabela(cls) -> bool:
+        try:
+            with criar_conexao() as conexao:
+                cursor = conexao.cursor()
+                cursor.execute(SQL_CRIAR_TABELA)
+                return True
+        except sqlite3.Error as e:
+            print(e)
+            return False       
+#Cursor de uma conexão é o objeto que executa comandos SQL
+    @classmethod
+    def inserir(cls, cliente: Cliente) -> Optional[Cliente]:
+        try:
+            with criar_conexao() as conexao:
+                cursor = conexao.cursor()
+                cursor.execute(SQL_INSERIR, (cliente.nome, cliente.email, cliente.telefone, cliente.endereco, cliente.senha))
+                if cursor.rowcount > 0:
+                    cliente.id = cursor.lastrowid #retorna o último id que foi autoincrementado, gerado pelo banco
+                    return cliente
+        except sqlite3.Error as e:
+            print(e)
+            return None
+        
+    @classmethod
+    def obter_todos(cls) -> List[Cliente]:
+        try:
+            with criar_conexao() as conexao:
+                cursor = conexao.cursor()
+                tuplas = cursor.execute(SQL_OBTER_TODOS).fetchall() #retorna uma lista de tuplas, onde cada tupla representa um registro da tabela
+                clientes = [Cliente(*t) for t in tuplas]
+                return clientes
+        except sqlite3.Error as e:
+            print(e)
+            return None
+        
+    @classmethod
+    def alterar(cls, cliente: Cliente) -> bool:
+        try:
+            with criar_conexao() as conexao:
+                cursor = conexao.cursor()
+                cursor.execute(SQL_ALTERAR, (cliente.nome, cliente.email, cliente.telefone, cliente.endereco, cliente.senha, cliente.id))
+                if cursor.rowcount > 0: #quantas linhas foram alteradas/se foi bem sucedido o comando
+                    return True
+        except sqlite3.Error as e:
+            print(e)
+            return False
+        
+    @classmethod
+    def excluir(cls, id: int) -> bool:
+        try:
+            with criar_conexao() as conexao:
+                cursor = conexao.cursor()
+                cursor.execute(SQL_EXCLUIR, (id,)) #quando passar um único valor, precisa colocar , no final da tupla
+                if cursor.rowcount > 0: 
+                    return True
+        except sqlite3.Error as e:
+            print(e)
+            return False
+        
+    @classmethod
+    def obter_um(cls, id: int) -> Optional[Cliente]:
+        try:
+            with criar_conexao() as conexao:
+                cursor = conexao.cursor()
+                tupla = cursor.execute(SQL_OBTER_UM, (id,)).fetchone() #quando retorna apenas 1 valor
+                cliente = Cliente(*tupla)
+                return cliente
+        except sqlite3.Error as e:
+            print(e)
+            return None
+        
+    @classmethod
+    def obter_quantidade(cls) -> Optional[int]:
+        try:
+            with criar_conexao() as conexao:
+                cursor = conexao.cursor()
+                tupla = cursor.execute(SQL_OBTER_QUANTIDADE).fetchone() #quando retorna apenas 1 valor
+                quantidade = int(tupla[0])
+                return quantidade
+        except sqlite3.Error as e:
+            print(e)
+            return None
+        
+# if cursor.rowcount > 0: #me da quantas linhas da minha tabela foram afetadas por esse comando(só comandos que modificam os dados da minha tabela)
+#cada tupla corresponde a uma linha do select
